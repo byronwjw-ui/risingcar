@@ -7,33 +7,27 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    height: 100%;
+    min-height: 100%;
     background: radial-gradient(ellipse at center, #0b1a3a 0%, #050a1c 100%);
     color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    overflow: hidden;
-    user-select: none;
     -webkit-user-select: none;
+    user-select: none;
   }
-  .wrap {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 14px;
-  }
+  body { padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
   h1 {
     color: #ff3b3b;
     text-shadow: 0 0 12px rgba(255,59,59,.7), 0 0 28px rgba(255,59,59,.45);
-    font-size: clamp(20px, 2.4vw, 32px);
-    margin-bottom: 10px;
+    font-size: clamp(20px, 2.4vw, 30px);
     letter-spacing: 2px;
+    text-align: center;
   }
   .stage {
     position: relative;
-    width: min(92vw, 900px);
+    width: min(94vw, 880px);
     aspect-ratio: 4 / 3;
+    max-height: 70vh;
     border: 4px solid #ff3b3b;
     border-radius: 12px;
     box-shadow: 0 0 24px rgba(255,59,59,.55), inset 0 0 30px rgba(255,59,59,.15);
@@ -43,10 +37,7 @@
   canvas { display: block; width: 100%; height: 100%; }
 
   .hud {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    font-weight: 700;
+    position: absolute; inset: 0; pointer-events: none; font-weight: 700;
   }
   .hud .panel {
     position: absolute;
@@ -54,7 +45,6 @@
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 8px;
     padding: 8px 12px;
-    backdrop-filter: blur(4px);
   }
   .speed { top: 12px; left: 12px; }
   .speed .num { color: #21d36b; font-size: 30px; line-height: 1; text-shadow: 0 0 10px #21d36b88; }
@@ -65,11 +55,12 @@
   .stats .level { color: #ffd24a; }
   .stats .nitro { color: #5ad7ff; }
   .stats .coins { color: #ffcc44; }
+  .stats .shield { color: #7dd3fc; }
 
   .watermark {
     position: absolute; bottom: 8px; left: 12px;
     color: #ff3b3b; font-weight: 900; letter-spacing: 3px;
-    font-style: italic; opacity: .6;
+    font-style: italic; opacity: .55;
     text-shadow: 0 0 6px #ff3b3b88;
   }
   .hi {
@@ -82,22 +73,21 @@
     display: none;
     flex-direction: column;
     align-items: center; justify-content: center;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(2px);
-    text-align: center; padding: 20px;
-    pointer-events: auto;
+    background: rgba(0,0,0,.6);
+    text-align: center; padding: 16px;
+    z-index: 5;
   }
   .overlay.show { display: flex; }
   .overlay h2 {
-    font-size: clamp(36px, 6vw, 72px);
+    font-size: clamp(32px, 5.5vw, 64px);
     color: #ff3b3b;
     text-shadow: 0 0 18px rgba(255,59,59,.8);
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     letter-spacing: 4px;
   }
-  .overlay p { font-size: 18px; margin: 6px 0; color: #eee; }
+  .overlay p { font-size: clamp(14px, 1.6vw, 18px); margin: 4px 0; color: #eee; }
   .btn {
-    margin-top: 22px;
+    margin-top: 18px;
     background: linear-gradient(180deg, #ff5a5a, #d92a2a);
     border: none;
     color: #fff; font-weight: 800;
@@ -112,11 +102,11 @@
   .btn:active { transform: translateY(0); }
 
   .controls {
-    margin-top: 14px;
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     color: #cfd6e4; font-size: 14px;
+    margin-bottom: 8px;
   }
-  .controls .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .controls .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .key {
     display: inline-block;
     background: linear-gradient(180deg,#ff4747,#c81e1e);
@@ -125,7 +115,7 @@
     border-radius: 8px; text-align:center;
     box-shadow: 0 2px 0 #5a0606, 0 0 10px rgba(255,59,59,.5);
   }
-  .hint { color:#9aa6bd; font-size:13px; }
+  .hint { color:#9aa6bd; font-size:13px; text-align:center; padding: 0 10px; }
 
   /* Mobile touch buttons */
   .touch {
@@ -135,6 +125,7 @@
     justify-content: space-between;
     padding: 0 14px;
     pointer-events: none;
+    z-index: 3;
   }
   .touch .group { display: flex; gap: 10px; pointer-events: auto; }
   .tbtn {
@@ -144,92 +135,88 @@
     border: 2px solid rgba(255,59,59,.7);
     color: #fff; font-size: 24px; font-weight: 900;
     display: flex; align-items: center; justify-content: center;
-    user-select: none; -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
   }
   .tbtn:active { background: rgba(255,59,59,.6); }
 
   @media (max-width: 720px) {
     .touch { display: flex; }
-    h1 { font-size: 20px; }
     .controls { font-size: 12px; }
+    .stage { max-height: 60vh; }
   }
 
-  /* damage flash */
   .stage.hit::after {
-    content: "";
-    position: absolute; inset: 0;
+    content: ""; position: absolute; inset: 0;
     background: radial-gradient(circle, rgba(255,0,0,.5), transparent 70%);
     animation: flash .35s ease-out;
-    pointer-events: none;
+    pointer-events: none; z-index: 4;
   }
   @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>🏎️ F1赛车大冒险 - 超级版 🏎️</h1>
+  <h1>🏎️ F1赛车大冒险 - 超级版 🏎️</h1>
 
-    <div class="stage" id="stage">
-      <canvas id="game" width="800" height="600"></canvas>
+  <div class="stage" id="stage">
+    <canvas id="game" width="800" height="600"></canvas>
 
-      <div class="hud">
-        <div class="panel speed">
-          <div class="num" id="speed">90</div>
-          <div class="lbl">km/h</div>
-        </div>
-        <div class="panel stats">
-          <div class="row score">得分: <span id="score">0</span></div>
-          <div class="row level">速度等级: <span id="level">1</span></div>
-          <div class="row nitro">氮气: <span id="nitro">0</span></div>
-          <div class="row coins">金币: <span id="coins">0</span></div>
-        </div>
-        <div class="watermark">F1 RACING</div>
-        <div class="hi">🏆 最高分: <span id="hi">0</span></div>
+    <div class="hud">
+      <div class="panel speed">
+        <div class="num" id="speed">90</div>
+        <div class="lbl">km/h</div>
       </div>
-
-      <!-- Start overlay -->
-      <div class="overlay show" id="startOverlay">
-        <h2>准备出发</h2>
-        <p>使用 ← → 移动，↑ 临时加速，N 释放氮气</p>
-        <p>💰 金币 +20 分 &nbsp; | &nbsp; 🛡️ 护盾 5 秒无敌 &nbsp; | &nbsp; 每 100 分获得 1 次氮气</p>
-        <button class="btn" id="startBtn">🚦 开始游戏</button>
+      <div class="panel stats">
+        <div class="row score">得分: <span id="score">0</span></div>
+        <div class="row level">速度等级: <span id="level">1</span></div>
+        <div class="row nitro">氮气 N: <span id="nitro">0</span></div>
+        <div class="row coins">金币 💰: <span id="coins">0</span></div>
+        <div class="row shield" id="shieldRow" style="display:none">护盾 🛡️: <span id="shieldT">0</span>s</div>
       </div>
-
-      <!-- Game over overlay -->
-      <div class="overlay" id="overOverlay">
-        <h2>GAME OVER</h2>
-        <p>最终得分: <span id="finalScore">0</span></p>
-        <p>速度等级: <span id="finalLevel">1</span></p>
-        <p>最高分: <span id="finalHi">0</span></p>
-        <button class="btn" id="restartBtn">🔁 点击重新开始</button>
-      </div>
-
-      <!-- Touch controls -->
-      <div class="touch">
-        <div class="group">
-          <div class="tbtn" id="tLeft">◀</div>
-          <div class="tbtn" id="tRight">▶</div>
-        </div>
-        <div class="group">
-          <div class="tbtn" id="tBoost">⤴</div>
-          <div class="tbtn" id="tNitro">N</div>
-        </div>
-      </div>
+      <div class="watermark">F1 RACING</div>
+      <div class="hi">🏆 最高分: <span id="hi">0</span></div>
     </div>
 
-    <div class="controls">
-      <div class="row">
-        使用 <span class="key">←</span><span class="key">→</span> 移动
-        | <span class="key">↑</span> 临时加速
-        | <span class="key">N</span> 氮气
-        | <span class="key">P</span> 暂停
+    <div class="overlay show" id="startOverlay">
+      <h2>准备出发</h2>
+      <p>← → 移动 &nbsp;|&nbsp; ↑ 临时加速 &nbsp;|&nbsp; N 释放氮气 &nbsp;|&nbsp; P 暂停</p>
+      <p>💰 金币 +20 分 &nbsp; | &nbsp; 🛡️ 护盾 5 秒无敌 &nbsp; | &nbsp; 每 100 分得 1 次氮气</p>
+      <button class="btn" id="startBtn" type="button">🚦 开始游戏</button>
+    </div>
+
+    <div class="overlay" id="overOverlay">
+      <h2>GAME OVER</h2>
+      <p>最终得分: <span id="finalScore">0</span></p>
+      <p>速度等级: <span id="finalLevel">1</span></p>
+      <p>金币数: <span id="finalCoins">0</span></p>
+      <p>最高分: <span id="finalHi">0</span></p>
+      <button class="btn" id="restartBtn" type="button">🔁 点击重新开始</button>
+    </div>
+
+    <div class="touch">
+      <div class="group">
+        <div class="tbtn" id="tLeft">◀</div>
+        <div class="tbtn" id="tRight">▶</div>
       </div>
-      <div class="hint">收集 💰 金币 +20分 &nbsp;|&nbsp; 🛡️ 护盾 5秒无敌 &nbsp;|&nbsp; 每 100 分获得 1 次氮气</div>
+      <div class="group">
+        <div class="tbtn" id="tBoost">⤴</div>
+        <div class="tbtn" id="tNitro">N</div>
+      </div>
     </div>
   </div>
 
+  <div class="controls">
+    <div class="row">
+      <span class="key">←</span><span class="key">→</span> 移动
+      &nbsp;|&nbsp; <span class="key">↑</span> 加速
+      &nbsp;|&nbsp; <span class="key">N</span> 氮气
+      &nbsp;|&nbsp; <span class="key">P</span> 暂停
+    </div>
+    <div class="hint">💰 金币 +20分 &nbsp;|&nbsp; 🛡️ 护盾 5秒无敌 &nbsp;|&nbsp; 每 100 分 +1 氮气</div>
+  </div>
+
 <script>
-(() => {
+window.addEventListener('load', function () {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -240,15 +227,18 @@
   const levelEl = document.getElementById('level');
   const nitroEl = document.getElementById('nitro');
   const coinsEl = document.getElementById('coins');
-  const hiEl = document.getElementById('hi');
+  const hiEl    = document.getElementById('hi');
+  const shieldRow = document.getElementById('shieldRow');
+  const shieldT   = document.getElementById('shieldT');
 
   const startOverlay = document.getElementById('startOverlay');
-  const overOverlay = document.getElementById('overOverlay');
-  const startBtn = document.getElementById('startBtn');
-  const restartBtn = document.getElementById('restartBtn');
+  const overOverlay  = document.getElementById('overOverlay');
+  const startBtn     = document.getElementById('startBtn');
+  const restartBtn   = document.getElementById('restartBtn');
   const finalScoreEl = document.getElementById('finalScore');
   const finalLevelEl = document.getElementById('finalLevel');
-  const finalHiEl = document.getElementById('finalHi');
+  const finalCoinsEl = document.getElementById('finalCoins');
+  const finalHiEl    = document.getElementById('finalHi');
 
   // Road layout
   const ROAD_LEFT = 110;
@@ -258,121 +248,95 @@
   const LANE_W = ROAD_W / LANES;
   const laneCenter = i => ROAD_LEFT + LANE_W * (i + 0.5);
 
-  // Game state
+  let HI = parseInt(localStorage.getItem('f1_hi') || '0', 10);
+  hiEl.textContent = HI;
+
   const state = {
-    running: false,
-    paused: false,
-    over: false,
-    score: 0,
-    coins: 0,
-    nitro: 0,
-    level: 1,
-    speed: 6,          // world scroll speed
-    baseSpeed: 6,
-    nitroActive: 0,    // frames left
-    boostActive: 0,    // ↑ key boost frames
-    shield: 0,         // frames left
-    invuln: 0,         // post-hit i-frames
-    spawnCD: 0,
-    coinCD: 0,
-    powerCD: 0,
-    roadOffset: 0,
-    hi: parseInt(localStorage.getItem('f1_hi') || '0', 10),
-    lastScoreNitro: 0,
-  };
-  hiEl.textContent = state.hi;
-
-  // Player
-  const player = {
-    x: W / 2, y: H - 90,
-    w: 44, h: 78,
-    targetLane: 2, // will recenter
-    vx: 0,
+    running: false, paused: false, over: false,
+    score: 0, coins: 0, nitro: 0, level: 1,
+    speed: 6, baseSpeed: 6,
+    nitroActive: 0, boostActive: 0,
+    shield: 0, invuln: 0,
+    spawnCD: 0, coinCD: 0, powerCD: 0,
+    roadOffset: 0, lastScoreNitro: 0,
   };
 
-  // Entities
-  let obstacles = []; // cars + cones
-  let coins = [];
-  let powers = [];   // shield, nitro pickups
-  let particles = [];
-  let bgStars = [];
+  const player = { x: W/2, y: H - 100, w: 44, h: 78, targetLane: 1 };
 
-  // Init stars
-  for (let i = 0; i < 60; i++) {
+  let obstacles = [], coins = [], powers = [], particles = [], bgStars = [];
+
+  for (let i = 0; i < 80; i++) {
     bgStars.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.4+0.2, s: Math.random()*0.6+0.2 });
   }
 
-  // Input
+  // ---------- Input ----------
   const keys = {};
-  window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
-    if (e.key === 'n' || e.key === 'N') tryNitro();
-    if (e.key === 'p' || e.key === 'P') togglePause();
-    if ([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
-  });
-  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  let prevLeft = false, prevRight = false;
 
-  // Touch controls
-  const bindHold = (el, key) => {
-    const on = (e) => { e.preventDefault(); keys[key] = true; };
-    const off = (e) => { e.preventDefault(); keys[key] = false; };
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.left = true;
+    if (k === 'ArrowRight'|| k === 'd' || k === 'D') keys.right = true;
+    if (k === 'ArrowUp'   || k === 'w' || k === 'W') keys.up = true;
+    if (k === 'n' || k === 'N') tryNitro();
+    if (k === 'p' || k === 'P') togglePause();
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k)) e.preventDefault();
+  });
+  window.addEventListener('keyup', (e) => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.left = false;
+    if (k === 'ArrowRight'|| k === 'd' || k === 'D') keys.right = false;
+    if (k === 'ArrowUp'   || k === 'w' || k === 'W') keys.up = false;
+  });
+
+  function bindHold(el, name) {
+    if (!el) return;
+    const on  = (e) => { e.preventDefault(); keys[name] = true; };
+    const off = (e) => { e.preventDefault(); keys[name] = false; };
     el.addEventListener('touchstart', on, {passive:false});
     el.addEventListener('touchend', off);
     el.addEventListener('touchcancel', off);
     el.addEventListener('mousedown', on);
     el.addEventListener('mouseup', off);
     el.addEventListener('mouseleave', off);
-  };
-  bindHold(document.getElementById('tLeft'), 'arrowleft');
-  bindHold(document.getElementById('tRight'), 'arrowright');
-  bindHold(document.getElementById('tBoost'), 'arrowup');
-  document.getElementById('tNitro').addEventListener('click', tryNitro);
+  }
+  bindHold(document.getElementById('tLeft'),  'left');
+  bindHold(document.getElementById('tRight'), 'right');
+  bindHold(document.getElementById('tBoost'), 'up');
+  const tN = document.getElementById('tNitro');
+  if (tN) { tN.addEventListener('click', tryNitro); tN.addEventListener('touchstart', (e) => { e.preventDefault(); tryNitro(); }, {passive:false}); }
 
   startBtn.addEventListener('click', startGame);
   restartBtn.addEventListener('click', startGame);
+  // safety: tapping anywhere on the overlays also starts
+  startOverlay.addEventListener('click', (e) => { if (e.target === startOverlay) startGame(); });
+  overOverlay.addEventListener('click',  (e) => { if (e.target === overOverlay)  startGame(); });
 
+  // ---------- Game flow ----------
   function startGame() {
-    state.running = true;
-    state.paused = false;
-    state.over = false;
-    state.score = 0;
-    state.coins = 0;
-    state.nitro = 0;
-    state.level = 1;
-    state.baseSpeed = 6;
-    state.speed = state.baseSpeed;
-    state.nitroActive = 0;
-    state.boostActive = 0;
-    state.shield = 0;
-    state.invuln = 60;
-    state.spawnCD = 0;
-    state.coinCD = 60;
-    state.powerCD = 300;
-    state.roadOffset = 0;
-    state.lastScoreNitro = 0;
-
+    state.running = true; state.paused = false; state.over = false;
+    state.score = 0; state.coins = 0; state.nitro = 1; state.level = 1;
+    state.baseSpeed = 6; state.speed = state.baseSpeed;
+    state.nitroActive = 0; state.boostActive = 0;
+    state.shield = 0; state.invuln = 90;
+    state.spawnCD = 30; state.coinCD = 60; state.powerCD = 400;
+    state.roadOffset = 0; state.lastScoreNitro = 0;
     obstacles = []; coins = []; powers = []; particles = [];
-
-    player.x = laneCenter(1);
-    player.targetLane = 1;
-    player.vx = 0;
-
+    player.x = laneCenter(1); player.targetLane = 1;
     startOverlay.classList.remove('show');
     overOverlay.classList.remove('show');
     updateHUD();
   }
 
   function gameOver() {
-    state.running = false;
-    state.over = true;
-    if (state.score > state.hi) {
-      state.hi = state.score;
-      localStorage.setItem('f1_hi', String(state.hi));
-    }
+    if (state.over) return;
+    state.running = false; state.over = true;
+    if (state.score > HI) { HI = state.score; localStorage.setItem('f1_hi', String(HI)); }
     finalScoreEl.textContent = state.score;
     finalLevelEl.textContent = state.level;
-    finalHiEl.textContent = state.hi;
-    hiEl.textContent = state.hi;
+    finalCoinsEl.textContent = state.coins;
+    finalHiEl.textContent = HI;
+    hiEl.textContent = HI;
     overOverlay.classList.add('show');
   }
 
@@ -385,15 +349,14 @@
     if (!state.running || state.paused) return;
     if (state.nitro > 0 && state.nitroActive <= 0) {
       state.nitro--;
-      state.nitroActive = 120; // 2s @ 60fps
-      // burst particles
-      for (let i = 0; i < 24; i++) {
+      state.nitroActive = 120;
+      for (let i = 0; i < 28; i++) {
         particles.push({
-          x: player.x + (Math.random()-0.5)*20,
+          x: player.x + (Math.random()-0.5)*22,
           y: player.y + player.h/2,
           vx: (Math.random()-0.5)*2,
           vy: Math.random()*4+3,
-          life: 30+Math.random()*20,
+          life: 30 + Math.random()*20,
           color: ['#5ad7ff','#a0f0ff','#ffffff'][Math.floor(Math.random()*3)],
           r: Math.random()*3+1.5,
         });
@@ -402,28 +365,23 @@
     }
   }
 
+  // ---------- Spawns ----------
   function spawnObstacle() {
-    // 4 lanes; spawn 1 obstacle, sometimes 2 (with a guaranteed gap)
     const lane = Math.floor(Math.random()*LANES);
-    const isCar = Math.random() < 0.65;
-    const w = isCar ? 44 : 30;
-    const h = isCar ? 78 : 36;
+    const isCar = Math.random() < 0.7;
+    const w = isCar ? 44 : 30, h = isCar ? 78 : 36;
     obstacles.push({
-      lane, x: laneCenter(lane), y: -h - 10,
-      w, h, type: isCar ? 'car' : 'cone',
-      color: isCar ? ['#ffb400','#4ade80','#60a5fa','#f472b6','#a78bfa'][Math.floor(Math.random()*5)] : '#ff7a00',
-      // slow down opponents a bit so player can pass at high speed
-      vy: isCar ? -1.5 : 0,
+      lane, x: laneCenter(lane), y: -h - 10, w, h,
+      type: isCar ? 'car' : 'cone',
+      color: isCar ? ['#ffb400','#4ade80','#60a5fa','#f472b6','#a78bfa','#ef4444'][Math.floor(Math.random()*6)] : '#ff7a00',
+      vy: isCar ? -1.4 : 0,
     });
-    // chance for second in another lane
-    if (Math.random() < 0.35 && state.level >= 2) {
-      let l2 = Math.floor(Math.random()*LANES);
-      if (l2 === lane) l2 = (l2+1) % LANES;
-      // never spawn 3-wide blockade
+    if (state.level >= 2 && Math.random() < 0.30) {
+      let l2 = (lane + 1 + Math.floor(Math.random()*(LANES-1))) % LANES;
       const isCar2 = Math.random() < 0.6;
       const w2 = isCar2 ? 44 : 30, h2 = isCar2 ? 78 : 36;
       obstacles.push({
-        lane: l2, x: laneCenter(l2), y: -h2 - 10 - Math.random()*60,
+        lane: l2, x: laneCenter(l2), y: -h2 - 40 - Math.random()*80,
         w: w2, h: h2, type: isCar2 ? 'car' : 'cone',
         color: isCar2 ? '#ef4444' : '#ff7a00',
         vy: isCar2 ? -1.2 : 0,
@@ -433,27 +391,19 @@
 
   function spawnCoin() {
     const lane = Math.floor(Math.random()*LANES);
-    // sometimes a row of 3
     const row = Math.random() < 0.5 ? 3 : 1;
     for (let i = 0; i < row; i++) {
-      coins.push({
-        x: laneCenter(lane),
-        y: -20 - i*28,
-        r: 11,
-        spin: Math.random()*Math.PI*2,
-      });
+      coins.push({ x: laneCenter(lane), y: -20 - i*30, r: 12, spin: Math.random()*Math.PI*2 });
     }
   }
 
   function spawnPower() {
     const lane = Math.floor(Math.random()*LANES);
     const kind = Math.random() < 0.55 ? 'shield' : 'nitro';
-    powers.push({
-      x: laneCenter(lane), y: -24, r: 16, kind,
-      bob: Math.random()*Math.PI*2,
-    });
+    powers.push({ x: laneCenter(lane), y: -24, r: 16, kind, bob: Math.random()*Math.PI*2 });
   }
 
+  // ---------- Helpers ----------
   function rectsOverlap(a, b) {
     return Math.abs(a.x - b.x) < (a.w + b.w)/2 - 4 &&
            Math.abs(a.y - b.y) < (a.h + b.h)/2 - 4;
@@ -472,61 +422,60 @@
     levelEl.textContent = state.level;
     nitroEl.textContent = state.nitro;
     coinsEl.textContent = state.coins;
+    if (state.shield > 0) {
+      shieldRow.style.display = '';
+      shieldT.textContent = (state.shield / 60).toFixed(1);
+    } else {
+      shieldRow.style.display = 'none';
+    }
   }
 
+  function addScore(n) {
+    state.score += n;
+    while (state.score - state.lastScoreNitro >= 100) {
+      state.lastScoreNitro += 100;
+      state.nitro++;
+    }
+  }
+
+  // ---------- Update ----------
   function update() {
     if (!state.running || state.paused) return;
 
-    // Speed dynamics
     let curSpeed = state.baseSpeed;
     if (state.boostActive > 0) { curSpeed *= 1.45; state.boostActive--; }
-    if (state.nitroActive > 0) { curSpeed *= 2.2; state.nitroActive--; }
+    if (state.nitroActive > 0) { curSpeed *= 2.2;  state.nitroActive--; }
     state.speed = curSpeed;
 
     state.roadOffset = (state.roadOffset + state.speed) % 80;
 
-    // Player horizontal control - lane based with smooth glide
-    const leftP  = keys['arrowleft']  || keys['a'];
-    const rightP = keys['arrowright'] || keys['d'];
-    const upP    = keys['arrowup']    || keys['w'];
+    // lane switching: edge-trigger on press
+    if (keys.left && !prevLeft)   player.targetLane = Math.max(0, player.targetLane - 1);
+    if (keys.right && !prevRight) player.targetLane = Math.min(LANES-1, player.targetLane + 1);
+    prevLeft = keys.left; prevRight = keys.right;
 
-    if (leftP && !state._lk) { player.targetLane = Math.max(0, player.targetLane - 1); }
-    if (rightP && !state._rk) { player.targetLane = Math.min(LANES-1, player.targetLane + 1); }
-    state._lk = leftP; state._rk = rightP;
-
-    if (upP && state.boostActive <= 0) state.boostActive = 8;
+    if (keys.up && state.boostActive <= 0) state.boostActive = 8;
 
     const tx = laneCenter(player.targetLane);
     player.x += (tx - player.x) * 0.22;
 
-    // Spawning
-    state.spawnCD -= 1;
-    const spawnRate = Math.max(18, 55 - state.level * 4);
-    if (state.spawnCD <= 0) {
-      spawnObstacle();
-      state.spawnCD = spawnRate + Math.random()*20;
-    }
-    state.coinCD -= 1;
-    if (state.coinCD <= 0) {
-      spawnCoin();
-      state.coinCD = 60 + Math.random()*60;
-    }
-    state.powerCD -= 1;
-    if (state.powerCD <= 0) {
-      spawnPower();
-      state.powerCD = 500 + Math.random()*400;
-    }
+    // spawn
+    state.spawnCD--;
+    const spawnRate = Math.max(20, 58 - state.level * 4);
+    if (state.spawnCD <= 0) { spawnObstacle(); state.spawnCD = spawnRate + Math.random()*22; }
+    state.coinCD--;
+    if (state.coinCD <= 0)  { spawnCoin();     state.coinCD  = 70 + Math.random()*70; }
+    state.powerCD--;
+    if (state.powerCD <= 0) { spawnPower();    state.powerCD = 500 + Math.random()*400; }
 
-    // Move world
+    // move world
     for (const o of obstacles) o.y += state.speed + (o.vy || 0);
     for (const c of coins) { c.y += state.speed; c.spin += 0.18; }
     for (const p of powers) { p.y += state.speed; p.bob += 0.12; }
-    for (const p of particles) {
-      p.x += p.vx; p.y += p.vy; p.life--; p.vy *= 0.98;
-    }
+    for (const p of particles) { p.x += p.vx; p.y += p.vy; p.vy *= 0.98; p.life--; }
     particles = particles.filter(p => p.life > 0);
 
-    // Trail particles when boosting
+    // trail when boosting
     if (state.nitroActive > 0 || state.boostActive > 0) {
       for (let i = 0; i < 3; i++) {
         particles.push({
@@ -534,94 +483,74 @@
           y: player.y + player.h/2 - 4,
           vx: (Math.random()-0.5)*0.6,
           vy: Math.random()*3+2,
-          life: 18 + Math.random()*10,
+          life: 20 + Math.random()*10,
           color: state.nitroActive>0 ? '#5ad7ff' : '#ffb400',
           r: Math.random()*2+1,
         });
       }
     }
 
-    // Cleanup off-screen
     obstacles = obstacles.filter(o => o.y < H + 100);
-    coins = coins.filter(c => c.y < H + 30);
-    powers = powers.filter(p => p.y < H + 30);
+    coins     = coins.filter(c => c.y < H + 30);
+    powers    = powers.filter(p => p.y < H + 30);
 
-    // Collisions
-    const playerBox = { x: player.x, y: player.y, w: player.w-8, h: player.h-8 };
+    // collisions
+    const pbox = { x: player.x, y: player.y, w: player.w-8, h: player.h-8 };
 
-    // Coins
-    for (let i = coins.length - 1; i >= 0; i--) {
-      if (circleRect(coins[i], playerBox)) {
-        state.coins++;
-        addScore(20);
-        // sparkle
+    for (let i = coins.length-1; i >= 0; i--) {
+      if (circleRect(coins[i], pbox)) {
+        state.coins++; addScore(20);
         for (let j = 0; j < 10; j++) {
-          particles.push({
-            x: coins[i].x, y: coins[i].y,
+          particles.push({ x: coins[i].x, y: coins[i].y,
             vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4,
-            life: 24, color: '#ffd24a', r: Math.random()*2+1,
-          });
+            life: 24, color: '#ffd24a', r: Math.random()*2+1 });
         }
         coins.splice(i,1);
       }
     }
-    // Powers
-    for (let i = powers.length - 1; i >= 0; i--) {
+    for (let i = powers.length-1; i >= 0; i--) {
       const p = powers[i];
-      const c = { x: p.x, y: p.y, r: p.r };
-      if (circleRect(c, playerBox)) {
-        if (p.kind === 'shield') { state.shield = 60*5; }
-        else { state.nitro++; }
+      if (circleRect({x:p.x,y:p.y,r:p.r}, pbox)) {
+        if (p.kind === 'shield') state.shield = 60*5; else state.nitro++;
         for (let j = 0; j < 14; j++) {
-          particles.push({
-            x: p.x, y: p.y,
+          particles.push({ x: p.x, y: p.y,
             vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5,
-            life: 30, color: p.kind==='shield'?'#7dd3fc':'#a78bfa', r: Math.random()*2+1.5,
-          });
+            life: 30, color: p.kind==='shield'?'#7dd3fc':'#a78bfa', r: Math.random()*2+1.5 });
         }
         powers.splice(i,1);
-        updateHUD();
-      }
-    }
-    // Obstacles
-    if (state.invuln > 0) state.invuln--;
-    if (state.shield > 0) state.shield--;
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      const o = obstacles[i];
-      if (rectsOverlap(playerBox, o)) {
-        if (state.shield > 0) {
-          // bust through
-          obstacles.splice(i,1);
-          for (let j = 0; j < 20; j++) {
-            particles.push({
-              x: o.x, y: o.y,
-              vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
-              life: 30, color: '#7dd3fc', r: Math.random()*3+1,
-            });
-          }
-          continue;
-        }
-        if (state.nitroActive > 0) {
-          // smash through during nitro
-          obstacles.splice(i,1);
-          for (let j = 0; j < 20; j++) {
-            particles.push({
-              x: o.x, y: o.y,
-              vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
-              life: 28, color: '#fb923c', r: Math.random()*3+1,
-            });
-          }
-          continue;
-        }
-        if (state.invuln > 0) continue;
-        // hit
-        stage.classList.remove('hit'); void stage.offsetWidth; stage.classList.add('hit');
-        gameOver();
-        return;
       }
     }
 
-    // Passive score & level up
+    if (state.invuln > 0) state.invuln--;
+    if (state.shield > 0) state.shield--;
+
+    for (let i = obstacles.length-1; i >= 0; i--) {
+      const o = obstacles[i];
+      if (!rectsOverlap(pbox, o)) continue;
+      if (state.shield > 0 || state.nitroActive > 0) {
+        const col = state.shield > 0 ? '#7dd3fc' : '#fb923c';
+        for (let j = 0; j < 22; j++) {
+          particles.push({ x: o.x, y: o.y,
+            vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
+            life: 30, color: col, r: Math.random()*3+1 });
+        }
+        addScore(10);
+        obstacles.splice(i,1);
+        continue;
+      }
+      if (state.invuln > 0) continue;
+      // crash
+      for (let j = 0; j < 40; j++) {
+        particles.push({ x: player.x, y: player.y,
+          vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
+          life: 40, color: ['#ff3b3b','#ffb400','#fff'][Math.floor(Math.random()*3)],
+          r: Math.random()*3+1 });
+      }
+      stage.classList.remove('hit'); void stage.offsetWidth; stage.classList.add('hit');
+      gameOver();
+      return;
+    }
+
     addScore(1);
     const newLevel = 1 + Math.floor(state.score / 250);
     if (newLevel !== state.level) {
@@ -632,23 +561,12 @@
     updateHUD();
   }
 
-  function addScore(n) {
-    state.score += n;
-    // every 100 score => +1 nitro
-    while (state.score - state.lastScoreNitro >= 100) {
-      state.lastScoreNitro += 100;
-      state.nitro++;
-    }
-  }
-
-  // Drawing helpers
+  // ---------- Draw ----------
   function drawBackground() {
-    // grass sides
     ctx.fillStyle = '#0a3a14';
     ctx.fillRect(0, 0, ROAD_LEFT, H);
     ctx.fillRect(ROAD_RIGHT, 0, W - ROAD_RIGHT, H);
 
-    // moving stripes on grass (motion lines)
     ctx.fillStyle = '#0e521b';
     const stripeH = 40;
     const off = state.roadOffset % stripeH;
@@ -657,7 +575,6 @@
       ctx.fillRect(ROAD_RIGHT, y, W - ROAD_RIGHT, stripeH);
     }
 
-    // road
     const grd = ctx.createLinearGradient(ROAD_LEFT, 0, ROAD_RIGHT, 0);
     grd.addColorStop(0, '#1f1f1f');
     grd.addColorStop(0.5, '#2a2a2a');
@@ -665,7 +582,6 @@
     ctx.fillStyle = grd;
     ctx.fillRect(ROAD_LEFT, 0, ROAD_W, H);
 
-    // curb (red/white) on edges
     const curbH = 30;
     const cOff = state.roadOffset % (curbH*2);
     for (let y = -curbH*2 + cOff; y < H; y += curbH*2) {
@@ -677,7 +593,6 @@
       ctx.fillRect(ROAD_RIGHT, y+curbH, 8, curbH);
     }
 
-    // lane dashed lines
     ctx.strokeStyle = 'rgba(255,255,255,.55)';
     ctx.lineWidth = 3;
     ctx.setLineDash([24, 22]);
@@ -687,127 +602,6 @@
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
     }
     ctx.setLineDash([]);
-  }
-
-  function drawCar(x, y, w, h, color, isPlayer) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,.45)';
-    ctx.beginPath(); ctx.ellipse(0, h/2+6, w/2, 6, 0, 0, Math.PI*2); ctx.fill();
-
-    // body
-    const grd = ctx.createLinearGradient(0, -h/2, 0, h/2);
-    grd.addColorStop(0, color);
-    grd.addColorStop(1, shade(color, -30));
-    ctx.fillStyle = grd;
-    roundRect(ctx, -w/2, -h/2, w, h, 8); ctx.fill();
-
-    // cockpit
-    ctx.fillStyle = '#111';
-    roundRect(ctx, -w/2+8, -h/2+18, w-16, h*0.42, 6); ctx.fill();
-    // windshield highlight
-    ctx.fillStyle = 'rgba(180,220,255,.35)';
-    roundRect(ctx, -w/2+10, -h/2+20, w-20, 10, 4); ctx.fill();
-
-    // front wing
-    ctx.fillStyle = shade(color, -40);
-    ctx.fillRect(-w/2-4, -h/2+2, w+8, 6);
-    // rear wing
-    ctx.fillRect(-w/2-4, h/2-10, w+8, 6);
-    ctx.fillRect(-w/2-2, h/2-14, w+4, 4);
-
-    // wheels
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-w/2-6, -h/2+12, 6, 18);
-    ctx.fillRect( w/2,    -h/2+12, 6, 18);
-    ctx.fillRect(-w/2-6,  h/2-30, 6, 18);
-    ctx.fillRect( w/2,    h/2-30, 6, 18);
-
-    // number / stripe
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-2, -h/2+10, 4, h-20);
-
-    if (isPlayer) {
-      // headlights
-      ctx.fillStyle = '#fff8a8';
-      ctx.fillRect(-w/2+4, -h/2+2, 6, 4);
-      ctx.fillRect( w/2-10, -h/2+2, 6, 4);
-    } else {
-      // taillights
-      ctx.fillStyle = '#ff5252';
-      ctx.fillRect(-w/2+4, h/2-6, 6, 4);
-      ctx.fillRect( w/2-10, h/2-6, 6, 4);
-    }
-    ctx.restore();
-  }
-
-  function drawCone(x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    // base
-    ctx.fillStyle = '#222';
-    ctx.fillRect(-14, 12, 28, 6);
-    // cone
-    ctx.fillStyle = '#ff7a00';
-    ctx.beginPath();
-    ctx.moveTo(0, -16);
-    ctx.lineTo(14, 14);
-    ctx.lineTo(-14, 14);
-    ctx.closePath(); ctx.fill();
-    // stripe
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-10, -2, 20, 4);
-    ctx.restore();
-  }
-
-  function drawCoin(c) {
-    ctx.save();
-    ctx.translate(c.x, c.y);
-    const s = Math.abs(Math.cos(c.spin));
-    ctx.scale(s*0.6 + 0.4, 1);
-    const g = ctx.createRadialGradient(0,0,2, 0,0,c.r);
-    g.addColorStop(0, '#fff7a8');
-    g.addColorStop(1, '#d99a1b');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#8a5a00'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#8a5a00'; ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('$', 0, 1);
-    ctx.restore();
-  }
-
-  function drawPower(p) {
-    ctx.save();
-    ctx.translate(p.x, p.y + Math.sin(p.bob)*3);
-    // glow
-    const col = p.kind === 'shield' ? '#7dd3fc' : '#a78bfa';
-    const glow = ctx.createRadialGradient(0,0,0, 0,0,p.r*2.2);
-    glow.addColorStop(0, col + 'cc');
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(0,0,p.r*2.2,0,Math.PI*2); ctx.fill();
-
-    // box
-    ctx.fillStyle = '#0b1a3a';
-    roundRect(ctx, -p.r, -p.r, p.r*2, p.r*2, 5); ctx.fill();
-    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(p.kind === 'shield' ? '🛡' : 'N', 0, 2);
-    ctx.restore();
-  }
-
-  function drawParticles() {
-    for (const p of particles) {
-      ctx.globalAlpha = Math.max(0, p.life / 40);
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
   }
 
   function drawStars() {
@@ -822,16 +616,107 @@
     }
   }
 
+  function drawCar(x, y, w, h, color, isPlayer) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.beginPath(); ctx.ellipse(0, h/2+6, w/2, 6, 0, 0, Math.PI*2); ctx.fill();
+
+    const grd = ctx.createLinearGradient(0, -h/2, 0, h/2);
+    grd.addColorStop(0, color);
+    grd.addColorStop(1, shade(color, -30));
+    ctx.fillStyle = grd;
+    roundRect(ctx, -w/2, -h/2, w, h, 8); ctx.fill();
+
+    ctx.fillStyle = '#111';
+    roundRect(ctx, -w/2+8, -h/2+18, w-16, h*0.42, 6); ctx.fill();
+    ctx.fillStyle = 'rgba(180,220,255,.35)';
+    roundRect(ctx, -w/2+10, -h/2+20, w-20, 10, 4); ctx.fill();
+
+    ctx.fillStyle = shade(color, -40);
+    ctx.fillRect(-w/2-4, -h/2+2, w+8, 6);
+    ctx.fillRect(-w/2-4, h/2-10, w+8, 6);
+    ctx.fillRect(-w/2-2, h/2-14, w+4, 4);
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(-w/2-6, -h/2+12, 6, 18);
+    ctx.fillRect( w/2,    -h/2+12, 6, 18);
+    ctx.fillRect(-w/2-6,  h/2-30, 6, 18);
+    ctx.fillRect( w/2,    h/2-30, 6, 18);
+
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-2, -h/2+10, 4, h-20);
+
+    if (isPlayer) {
+      ctx.fillStyle = '#fff8a8';
+      ctx.fillRect(-w/2+4, -h/2+2, 6, 4);
+      ctx.fillRect( w/2-10, -h/2+2, 6, 4);
+    } else {
+      ctx.fillStyle = '#ff5252';
+      ctx.fillRect(-w/2+4, h/2-6, 6, 4);
+      ctx.fillRect( w/2-10, h/2-6, 6, 4);
+    }
+    ctx.restore();
+  }
+
+  function drawCone(x, y) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = '#222'; ctx.fillRect(-14, 12, 28, 6);
+    ctx.fillStyle = '#ff7a00';
+    ctx.beginPath();
+    ctx.moveTo(0, -16); ctx.lineTo(14, 14); ctx.lineTo(-14, 14); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillRect(-10, -2, 20, 4);
+    ctx.restore();
+  }
+
+  function drawCoin(c) {
+    ctx.save(); ctx.translate(c.x, c.y);
+    const s = Math.abs(Math.cos(c.spin));
+    ctx.scale(s*0.6 + 0.4, 1);
+    const g = ctx.createRadialGradient(0,0,2, 0,0,c.r);
+    g.addColorStop(0, '#fff7a8'); g.addColorStop(1, '#d99a1b');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#8a5a00'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#8a5a00'; ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('$', 0, 1);
+    ctx.restore();
+  }
+
+  function drawPower(p) {
+    ctx.save(); ctx.translate(p.x, p.y + Math.sin(p.bob)*3);
+    const col = p.kind === 'shield' ? '#7dd3fc' : '#a78bfa';
+    const glow = ctx.createRadialGradient(0,0,0, 0,0,p.r*2.2);
+    glow.addColorStop(0, col + 'cc'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(0,0,p.r*2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#0b1a3a';
+    roundRect(ctx, -p.r, -p.r, p.r*2, p.r*2, 5); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(p.kind === 'shield' ? 'S' : 'N', 0, 1);
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 40));
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function drawShield() {
     if (state.shield <= 0) return;
     const t = performance.now() / 200;
-    ctx.save();
-    ctx.translate(player.x, player.y);
+    ctx.save(); ctx.translate(player.x, player.y);
     ctx.strokeStyle = `rgba(125,211,252,${0.6 + Math.sin(t)*0.2})`;
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(0, 0, 50, 0, Math.PI*2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 50, 0, Math.PI*2); ctx.stroke();
     ctx.strokeStyle = 'rgba(125,211,252,.25)';
     ctx.beginPath(); ctx.arc(0, 0, 56, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
@@ -847,29 +732,20 @@
     ctx.clearRect(0,0,W,H);
     drawBackground();
     drawStars();
-
-    // power-ups
     for (const p of powers) drawPower(p);
-    // coins
-    for (const c of coins) drawCoin(c);
-    // obstacles
+    for (const c of coins)  drawCoin(c);
     for (const o of obstacles) {
       if (o.type === 'car') drawCar(o.x, o.y, o.w, o.h, o.color, false);
       else drawCone(o.x, o.y);
     }
-
     drawParticles();
-
-    // player blink during invuln
-    if (!(state.invuln > 0 && Math.floor(state.invuln/4)%2===0)) {
-      drawCar(player.x, player.y, player.w, player.h, '#ff3b3b', true);
-    }
+    const blink = state.invuln > 0 && Math.floor(state.invuln/4) % 2 === 0;
+    if (!blink) drawCar(player.x, player.y, player.w, player.h, '#ff3b3b', true);
     drawShield();
     drawNitroFlash();
 
     if (state.paused) {
-      ctx.fillStyle = 'rgba(0,0,0,.5)';
-      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 56px sans-serif';
       ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -880,8 +756,8 @@
   }
 
   function loop() {
-    update();
-    render();
+    try { update(); render(); }
+    catch (err) { console.error('Game loop error:', err); }
     requestAnimationFrame(loop);
   }
   loop();
@@ -897,6 +773,7 @@
     c.closePath();
   }
   function shade(hex, pct) {
+    if (!hex.startsWith('#')) return hex;
     const c = hex.replace('#','');
     let r = parseInt(c.substr(0,2),16);
     let g = parseInt(c.substr(2,2),16);
@@ -904,9 +781,9 @@
     r = Math.max(0,Math.min(255, r + pct));
     g = Math.max(0,Math.min(255, g + pct));
     b = Math.max(0,Math.min(255, b + pct));
-    return `rgb(${r},${g},${b})`;
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
-})();
+});
 </script>
 </body>
 </html>
